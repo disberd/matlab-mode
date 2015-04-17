@@ -6,6 +6,12 @@ This is an unofficial port of the MATLAB and Emacs integration mode from the pro
 4. Fixed version parsing for new Matlab versions
 5. Re-enabled HTML parsing
 
+Some new updates by [cute-jumper](https://github.com/cute-jumper)
+
+1. Rewrite `company-matlab-shell.el`
+2. `company-matlab.el` is now able to complete the functions at the same
+   directory as the editing Matlab file.
+
 # Installation
 
 Run `make` in the root directory to generate the autoload file `matlab-load.el`.
