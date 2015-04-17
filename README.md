@@ -8,6 +8,9 @@ This is an unofficial port of the MATLAB and Emacs integration mode from the pro
 
 # Installation
 
+Run `make` in the root directory to generate the autoload file `matlab-load.el`.
+
+
 Add the following to your .emacs file:
 
 ```
@@ -22,7 +25,7 @@ Add the following to your .emacs file:
 To use the company completion engine, add company-matlab to company-mode backends list:
 
 ```
-(add-to-list 'company-backends 'company-anaconda)
+(add-to-list 'company-backends 'company-matlab)
 ```
 
 **NOTE!** In order for the completions to work Matlab shell must be started!
