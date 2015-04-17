@@ -15,59 +15,70 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(condition-case nil
-    (require 'company)
-  (error nil))
+(ignore-errors
+  (require 'company))
 (eval-when-compile (require 'cl))
 (require 'matlab)
 
 ;; the following code is mostly taken from matlab.el, (C) Eric M. Ludlam
-(defun company-matlab-shell-tab ()
+(defun company-matlab-shell-tab (prefix)
    "Send [TAB] to the currently running matlab process and retrieve completion."
-   (goto-char (point-max))
-   (let ((inhibit-field-text-motion t))
-     (beginning-of-line))
-   (re-search-forward comint-prompt-regexp)
-   (let* ((lastcmd (buffer-substring (point) (matlab-point-at-eol)))
-	  (tempcmd lastcmd)
-	  (completions nil)
-	  (limitpos nil))
-     ;; search for character which limits completion, and limit command to it
-     (setq limitpos
-	   (if (string-match ".*\\([( /[,;=']\\)" lastcmd)
-	       (1+ (match-beginning 1))
-	     0))
-     (setq lastcmd (substring lastcmd limitpos))
-     ;; Whack the old command so we can insert it back later.
-     (delete-region (+ (point) limitpos) (matlab-point-at-eol))
-     ;; double every single quote
-     (while (string-match "[^']\\('\\)\\($\\|[^']\\)" tempcmd)
-       (setq tempcmd (replace-match "''" t t tempcmd 1)))
+   (let ((orig-point (point))
+         (end-with-period-p (looking-back "\\."))
+         tempcmd
+         completions)
+     (re-search-backward " ")
+     (unless (or end-with-period-p
+                 (not (company-matlab--keyword-at-same-line-p)))
+       (re-search-backward " \\(cd\\|help\\) *"))     
+     (forward-char)
+     (setq tempcmd (buffer-substring-no-properties (point) orig-point))
+     ;; double double every single quote!!
+     (setq tempcmd (replace-regexp-in-string "'" "''''" tempcmd))
      ;; collect the list
      (setq completions (matlab-shell-completion-list tempcmd))
-     (goto-char (point-max))
-     (insert lastcmd)
+     (goto-char orig-point)
      completions))
 
-(defun company-matlab-shell-grab-symbol ()
-  (when (string= (buffer-name (current-buffer)) (concat "*" matlab-shell-buffer-name "*"))
+(defun company-matlab--at-last-line-p ()
+  (let ((orig-line (line-number-at-pos)))
     (save-excursion
       (goto-char (point-max))
-      (let ((inhibit-field-text-motion t))
-	(beginning-of-line))
-      (re-search-forward comint-prompt-regexp)
-      (let* ((lastcmd (buffer-substring (point) (matlab-point-at-eol)))
-	     limitpos)
-	(setq limitpos
-	      (if (string-match ".*\\([( /[,;=']\\)" lastcmd)
-		  (1+ (match-beginning 1))
-		0))
-	(substring-no-properties lastcmd limitpos)))))
+      (= orig-line (line-number-at-pos)))))
+
+(defun company-matlab--keyword-at-same-line-p ()
+  (save-excursion
+    (when (looking-back " \\(cd\\|help\\) *")
+      (re-search-backward " \\(cd\\|help\\) *")
+      (company-matlab--at-last-line-p))))
+
+(defun company-matlab-shell-grab-symbol ()
+  (when (and
+         (string= (buffer-name (current-buffer)) (concat "*" matlab-shell-buffer-name "*"))
+         (company-matlab--at-last-line-p))
+    (let ((orig-point (point)))
+      (re-search-backward " ")
+      (when (company-matlab--keyword-at-same-line-p)
+        (re-search-backward " \\(cd\\|help\\) *"))
+      (prog1
+          (when (company-matlab--at-last-line-p)
+            (forward-char)
+            (let* ((lastcmd (buffer-substring-no-properties
+                             (point) orig-point))
+                   limitpos)
+              (unless (string= lastcmd "") 
+                (setq limitpos
+                      ;; Must add \\. here
+                      (if (string-match ".*\\([(\\. /[,;=']\\)" lastcmd)
+                          (1+ (match-beginning 1))
+                        0))
+                (substring-no-properties lastcmd limitpos))))
+        (goto-char orig-point)))))
 
 
-(defun company-matlab-shell-get-completions ()
+(defun company-matlab-shell-get-completions (arg)
   (when (string= (buffer-name (current-buffer)) (concat "*" matlab-shell-buffer-name "*"))
-    (mapcar 'car (company-matlab-shell-tab))))
+    (mapcar 'car (company-matlab-shell-tab arg))))
 
 ;;;###autoload
 (defun company-matlab-shell (command &optional arg &rest ignored)
@@ -75,8 +86,8 @@
   (interactive (list 'interactive))
   (case command
         ('interactive (company-begin-backend 'company-matlab-shell))
-        ('prefix (company-matlab-shell-grab-symbol))
-        ('candidates (company-matlab-shell-get-completions))
+        ('prefix (or (company-matlab-shell-grab-symbol) 'stop))
+        ('candidates (company-matlab-shell-get-completions arg))
 	('sorted t)))
 
 (provide 'company-matlab-shell)

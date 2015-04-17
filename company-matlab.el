@@ -21,9 +21,8 @@
 ;; The following code is largely based on the company-matlab-shell.el mode.
 
 (require 'cl-lib)
-(condition-case nil
-    (require 'company)
-  (error nil))
+(ignore-errors
+  (require 'company))
 (require 'matlab)
 
 
