@@ -35,6 +35,9 @@
          (pre-shell-line nil)
          (post-shell-line nil)
          (shell-buf (get-buffer (concat "*" matlab-shell-buffer-name "*")))
+         (current-directory default-directory)
+         shell-directory
+         line-text 
          (inhibit-quit nil))            ; For some reason this is set and produces error
     ;; Remove everything before ;
     (setq cmd (replace-regexp-in-string ".*;" "" cmd))
@@ -42,7 +45,9 @@
     (setq cmd (replace-regexp-in-string "'" "''''" cmd))
     (with-current-buffer shell-buf
       ;; Remember shell cursor position
-      (setq pt-shell (point))
+      (setq pt-shell (point))            
+      (comint-send-string (get-buffer-process (current-buffer))
+                          (concat "cd " current-directory "\n"))
       (setq pre-shell-line (save-excursion
                              (let ((inhibit-field-text-motion t))
                                (beginning-of-line))
