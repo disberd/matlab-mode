@@ -89,7 +89,7 @@
   (interactive (list 'interactive))
   (cl-case command
     ('interactive (company-begin-backend 'company-matlab))
-    ('prefix (company-matlab-prefix))
+    ('prefix (and (eq 'matlab-mode major-mode) (company-matlab-prefix)))
     ('candidates (company-matlab-get-completions arg))
     ('sorted t)))
 

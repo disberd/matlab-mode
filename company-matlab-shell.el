@@ -22,23 +22,23 @@
 
 ;; the following code is mostly taken from matlab.el, (C) Eric M. Ludlam
 (defun company-matlab-shell-tab (prefix)
-   "Send [TAB] to the currently running matlab process and retrieve completion."
-   (let ((orig-point (point))
-         (end-with-period-p (looking-back "\\."))
-         tempcmd
-         completions)
-     (re-search-backward " ")
-     (unless (or end-with-period-p
-                 (not (company-matlab--keyword-at-same-line-p)))
-       (re-search-backward " \\(cd\\|help\\) *"))     
-     (forward-char)
-     (setq tempcmd (buffer-substring-no-properties (point) orig-point))
-     ;; double double every single quote!!
-     (setq tempcmd (replace-regexp-in-string "'" "''''" tempcmd))
-     ;; collect the list
-     (setq completions (matlab-shell-completion-list tempcmd))
-     (goto-char orig-point)
-     completions))
+  "Send [TAB] to the currently running matlab process and retrieve completion."
+  (let ((orig-point (point))
+        (end-with-period-p (looking-back "\\."))
+        tempcmd
+        completions)
+    (re-search-backward " ")
+    (unless (or end-with-period-p
+                (not (company-matlab--keyword-at-same-line-p)))
+      (re-search-backward " \\(cd\\|help\\) *"))
+    (forward-char)
+    (setq tempcmd (buffer-substring-no-properties (point) orig-point))
+    ;; double double every single quote!!
+    (setq tempcmd (replace-regexp-in-string "'" "''''" tempcmd))
+    ;; collect the list
+    (setq completions (matlab-shell-completion-list tempcmd))
+    (goto-char orig-point)
+    completions))
 
 (defun company-matlab--at-last-line-p ()
   (let ((orig-line (line-number-at-pos)))
@@ -66,7 +66,7 @@
             (let* ((lastcmd (buffer-substring-no-properties
                              (point) orig-point))
                    limitpos)
-              (unless (string= lastcmd "") 
+              (unless (string= lastcmd "")
                 (setq limitpos
                       ;; Must add \\. here
                       (if (string-match ".*\\([(\\. /[,;=']\\)" lastcmd)
@@ -85,10 +85,10 @@
   "A `company-mode' completion back-end for Matlab-Shell."
   (interactive (list 'interactive))
   (case command
-        ('interactive (company-begin-backend 'company-matlab-shell))
-        ('prefix (or (company-matlab-shell-grab-symbol) 'stop))
-        ('candidates (company-matlab-shell-get-completions arg))
-	('sorted t)))
+    ('interactive (company-begin-backend 'company-matlab-shell))
+    ('prefix (and (eq 'matlab-shell-mode major-mode) (or (company-matlab-shell-grab-symbol) 'stop)))
+    ('candidates (company-matlab-shell-get-completions arg))
+    ('sorted t)))
 
 (provide 'company-matlab-shell)
 ;;; company-matlab-shell.el ends here
