@@ -310,7 +310,7 @@ This is used to generate and identify continuation lines.")
   :group 'matlab
   :type 'boolean)
 
-(defcustom matlab-fill-count-ellipsis-flag t
+(defcustom matlab-fill-count-ellipsis-flag nil 
   "*Non-nil means to count the ellipsis when auto filling.
 This effectively shortens the `fill-column' by the length of
 `matlab-elipsis-string'.")
@@ -5864,6 +5864,25 @@ Check `matlab-mode-install-path'" filename))))
   (let ((f (matlab-read-word-at-point)))
     (if (not f) (error "To find an M file, click on a word"))
     (matlab-find-file-on-path f)))
+
+(defun matlab-insert-section-block (string)
+  (interactive "MName: ")
+  (setq whitespaces (- fill-column (length string) 4))
+  (setq middle-string
+        (concat
+         (make-string 2 ?%)
+         (make-string (floor whitespaces 2) ? )
+         string
+         (make-string (ceiling whitespaces 2) ? )
+         (make-string 2 ?%)))
+  (save-excursion
+    (newline)
+    (insert-char ?% fill-column)
+    (newline)
+    (insert middle-string)
+    (newline)
+    (insert-char ?% fill-column)
+    (newline)))
 
 
 ;;; matlab-mode debugging =====================================================
